@@ -1,0 +1,8 @@
+Assembly-CSharp.csproj
+unity-netcode.sln
+.vsconfig
+.vs/
+Library/
+Logs/
+obj/
+UserSettings/
