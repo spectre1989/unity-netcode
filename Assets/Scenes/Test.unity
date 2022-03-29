@@ -522,6 +522,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Client: {fileID: 2096009144}
+  PrefabTable:
+  - {fileID: 8651282338406206992, guid: afc487eb96def0e44b6e75a798f446f9, type: 3}
+  - {fileID: 8993314460688023190, guid: f5d0c8fea75f7164cbd681bb1e5f66f1, type: 3}
+  - {fileID: 171141080672638969, guid: 4a73793cdbae15847a6f937b40f34e0e, type: 3}
+  - {fileID: 5568943864007543346, guid: 7d164c339a4659343ae14b4408a6ed83, type: 3}
 --- !u!1 &1208225169
 GameObject:
   m_ObjectHideFlags: 0
@@ -761,3 +766,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f279093bda9eea44284a269be2b079e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  PrefabTable:
+  - {fileID: 8651282338406206992, guid: 109bf1b0058b0aa42acb5eb1e3f8e9fe, type: 3}
+  - {fileID: 8993314460688023190, guid: ced77c36540a6dc4bbcb9cc82a756951, type: 3}
+  - {fileID: 171141080672638969, guid: 8b77138096aff024da6924131b9e341a, type: 3}
+  - {fileID: 5568943864007543346, guid: 127091ed1cf4c8543940de67574118ce, type: 3}
