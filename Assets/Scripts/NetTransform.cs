@@ -11,9 +11,9 @@ public class NetTransform : NetObject
     }
 
     [NetSerialise]
-    public Vector3 Rot
+    public Quaternion Rot
     {
-        get { return this.transform.localEulerAngles; }
-        set { this.transform.localEulerAngles = value; }
+        get { return this.transform.localRotation; }
+        set { this.transform.localRotation = value; }
     }
 }

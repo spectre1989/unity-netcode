@@ -5,10 +5,14 @@ using System.Reflection;
 
 public class Server : MonoBehaviour
 {
+    public float Tickrate;
+    public int SnapshotInterval;
     public Client Client;
     public GameObject[] PrefabTable;
     private List<NetObject> _objects;
     private List<int> _objectPrefabIds;
+    private float _tickAccumulator;
+    private int _snapshotAccumulator;
 
     private void Start()
     {
@@ -34,41 +38,78 @@ public class Server : MonoBehaviour
 
     private void Update()
     {
-        byte[] packet = new byte[1500]; // TODO how to properly handle MTU
+        float tickDeltaTime = 1.0f / Tickrate;
 
-        int writePos = 0;
-        BitConverter.GetBytes(_objects.Count).CopyTo(packet, writePos);
-        writePos += 4;
-
-        for (int i = 0; i < _objects.Count; ++i)
+        _tickAccumulator += Time.deltaTime;
+        while (_tickAccumulator >= tickDeltaTime)
         {
-            BitConverter.GetBytes(_objectPrefabIds[i]).CopyTo(packet, writePos);
-            writePos += 4;
+            _tickAccumulator -= tickDeltaTime;
 
-            PropertyInfo[] properties = _objects[i].GetType().GetProperties(
-                BindingFlags.Public | 
-                BindingFlags.NonPublic | 
-                BindingFlags.Instance);
-            
-            for (int prop = 0; prop < properties.Length; ++prop)
+            Physics.Simulate(tickDeltaTime);
+
+            ++_snapshotAccumulator;
+            if (_snapshotAccumulator == SnapshotInterval)
             {
-                if (properties[prop].PropertyType == typeof(Vector3))
+                _snapshotAccumulator = 0;
+
+                byte[] packet = new byte[1500]; // TODO how to properly handle MTU
+
+                int writePos = 0;
+                float snapshotDeltaTime = tickDeltaTime * SnapshotInterval;
+                BitConverter.GetBytes(snapshotDeltaTime).CopyTo(packet, writePos);
+                writePos += 4;
+
+                BitConverter.GetBytes(_objects.Count).CopyTo(packet, writePos);
+                writePos += 4;
+
+                for (int i = 0; i < _objects.Count; ++i)
                 {
-                    Vector3 v = (Vector3)properties[prop].GetValue(_objects[i]);
-                    BitConverter.GetBytes(v.x).CopyTo(packet, writePos);
-                    BitConverter.GetBytes(v.y).CopyTo(packet, writePos + 4);
-                    BitConverter.GetBytes(v.z).CopyTo(packet, writePos + 8);
-                    writePos += 12;
-                }
-                else if (properties[prop].PropertyType == typeof(float))
-                {
-                    float f = (float)properties[prop].GetValue(_objects[i]);
-                    BitConverter.GetBytes(f).CopyTo(packet, writePos);
+                    BitConverter.GetBytes(_objectPrefabIds[i]).CopyTo(packet, writePos);
                     writePos += 4;
+
+                    PropertyInfo[] properties = _objects[i].GetType().GetProperties(
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic |
+                        BindingFlags.Instance);
+
+                    for (int prop = 0; prop < properties.Length; ++prop)
+                    {
+                        foreach (CustomAttributeData customAttributeData in properties[prop].CustomAttributes)
+                        {
+                            if (customAttributeData.AttributeType == typeof(NetSerialiseAttribute))
+                            {
+                                if (properties[prop].PropertyType == typeof(Vector3))
+                                {
+                                    Vector3 v = (Vector3)properties[prop].GetValue(_objects[i]);
+                                    BitConverter.GetBytes(v.x).CopyTo(packet, writePos);
+                                    BitConverter.GetBytes(v.y).CopyTo(packet, writePos + 4);
+                                    BitConverter.GetBytes(v.z).CopyTo(packet, writePos + 8);
+                                    writePos += 12;
+                                }
+                                else if (properties[prop].PropertyType == typeof(float))
+                                {
+                                    float f = (float)properties[prop].GetValue(_objects[i]);
+                                    BitConverter.GetBytes(f).CopyTo(packet, writePos);
+                                    writePos += 4;
+                                }
+                                else if (properties[prop].PropertyType == typeof(Quaternion))
+                                {
+                                    Quaternion q = (Quaternion)properties[prop].GetValue(_objects[i]);
+                                    BitConverter.GetBytes(q.x).CopyTo(packet, writePos);
+                                    BitConverter.GetBytes(q.y).CopyTo(packet, writePos + 4);
+                                    BitConverter.GetBytes(q.z).CopyTo(packet, writePos + 8);
+                                    BitConverter.GetBytes(q.w).CopyTo(packet, writePos + 12);
+                                    writePos += 16;
+                                }
+
+                                break;
+                            }
+                        }
+                    }
                 }
+
+                Client.ReceivePacket(packet);
             }
         }
-
-        Client.ReceivePacket(packet);
     }
 }

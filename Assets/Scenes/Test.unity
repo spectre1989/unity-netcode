@@ -521,6 +521,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14cd40a592be5fe429c04b82a6345af3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Tickrate: 60
+  SnapshotInterval: 3
   Client: {fileID: 2096009144}
   PrefabTable:
   - {fileID: 8651282338406206992, guid: afc487eb96def0e44b6e75a798f446f9, type: 3}
