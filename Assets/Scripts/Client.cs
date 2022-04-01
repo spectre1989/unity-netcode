@@ -5,24 +5,33 @@ using System.Reflection;
 
 public class Client : MonoBehaviour
 {
+    public Server Server;
     public GameObject[] PrefabTable;
+    public float Latency;
     private List<NetObject> _objects;
     private List<byte[]> _snapshots;
     private float _snapshotLerpT;
+    private Queue<PendingPacket> _pendingPackets;
 
     private void Start()
     {
         _objects = new List<NetObject>();
         _snapshots = new List<byte[]>();
+        _pendingPackets = new Queue<PendingPacket>();
     }
 
     public void ReceivePacket(byte[] packet)
     {
-        _snapshots.Add(packet);
+        _pendingPackets.Enqueue(new PendingPacket { timeToConsume = Time.time + Latency, packet = packet });
     }
 
     private void Update()
     {
+        while(_pendingPackets.Count > 0 && _pendingPackets.Peek().timeToConsume <= Time.time)
+        {
+            _snapshots.Add(_pendingPackets.Dequeue().packet);
+        }
+
         if (_snapshots.Count > 1)
         {
             float snapshotDeltaTime = BitConverter.ToSingle(_snapshots[0], 0);
@@ -44,6 +53,17 @@ public class Client : MonoBehaviour
                 _snapshotLerpT = 0.0f;
             }
         }
+
+        byte packedInput = (byte)(
+            (Input.GetKey(KeyCode.W) ? 1 : 0) | 
+            (Input.GetKey(KeyCode.S) ? 2 : 0) |
+            (Input.GetKey(KeyCode.A) ? 4 : 0) |
+            (Input.GetKey(KeyCode.D) ? 8 : 0));
+        byte[] packet = new byte[1500];
+        packet[0] = packedInput;
+        BitConverter.GetBytes(Time.deltaTime).CopyTo(packet, 1);
+
+        Server.ReceivePacket(packet, Latency);
     }
 
     private void Interpolate(byte[] a, byte[] b, float t)

@@ -3,6 +3,12 @@ using System;
 using UnityEngine;
 using System.Reflection;
 
+struct PendingPacket
+{
+    public float timeToConsume;
+    public byte[] packet;
+}
+
 public class Server : MonoBehaviour
 {
     public float Tickrate;
@@ -13,11 +19,25 @@ public class Server : MonoBehaviour
     private List<int> _objectPrefabIds;
     private float _tickAccumulator;
     private int _snapshotAccumulator;
+    private Queue<PendingPacket> _pendingPackets;
 
     private void Start()
     {
         _objects = new List<NetObject>();
         _objectPrefabIds = new List<int>();
+        _pendingPackets = new Queue<PendingPacket>();
+
+        CreateNetObject(0);
+    }
+
+    private void CreateNetObject(int prefabId)
+    {
+        GameObject obj = Instantiate(PrefabTable[prefabId]);
+        obj.transform.parent = this.transform;
+        obj.transform.localPosition = new Vector3(0.0f, 3.0f, 0.0f);
+
+        _objects.Add(obj.GetComponent<NetObject>()); // TODO detect absence of NetObject script and log accordingly
+        _objectPrefabIds.Add(prefabId);
     }
 
     private void OnGUI()
@@ -26,18 +46,18 @@ public class Server : MonoBehaviour
         {
             if (GUILayout.Button(PrefabTable[i].name))
             {
-                GameObject obj = Instantiate(PrefabTable[i]);
-                obj.transform.parent = this.transform;
-                obj.transform.localPosition = new Vector3(0.0f, 3.0f, 0.0f);
-
-                _objects.Add(obj.GetComponent<NetObject>()); // TODO detect absence of NetObject script and log accordingly
-                _objectPrefabIds.Add(i);
+                CreateNetObject(i);
             }
         }
     }
 
     private void Update()
     {
+        while (_pendingPackets.Count > 0 && _pendingPackets.Peek().timeToConsume <= Time.time)
+        {
+            ProcessPacket(_pendingPackets.Dequeue().packet);
+        }
+
         float tickDeltaTime = 1.0f / Tickrate;
 
         _tickAccumulator += Time.deltaTime;
@@ -111,5 +131,26 @@ public class Server : MonoBehaviour
                 Client.ReceivePacket(packet);
             }
         }
+    }
+
+    public void ReceivePacket(byte[] packet, float fakeLatency)
+    {
+        _pendingPackets.Enqueue(new PendingPacket { timeToConsume = Time.time + fakeLatency, packet = packet });
+    }
+
+    private void ProcessPacket(byte[] packet)
+    {
+        byte packedInput = packet[0];
+        float dt = BitConverter.ToSingle(packet, 1);
+
+        NetPlayer.Input input = new NetPlayer.Input();
+        input.forward = (packedInput & 1) != 0;
+        input.back = (packedInput & 2) != 0;
+        input.left = (packedInput & 4) != 0;
+        input.right = (packedInput & 8) != 0;
+
+        // TODO do something about speed hacks
+        NetPlayer player = _objects[0] as NetPlayer;
+        player.Move(input, dt);
     }
 }
