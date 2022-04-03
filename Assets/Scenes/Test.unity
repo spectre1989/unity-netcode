@@ -774,3 +774,5 @@ MonoBehaviour:
   - {fileID: 8993314460688023190, guid: ced77c36540a6dc4bbcb9cc82a756951, type: 3}
   - {fileID: 171141080672638969, guid: 8b77138096aff024da6924131b9e341a, type: 3}
   - {fileID: 5568943864007543346, guid: 127091ed1cf4c8543940de67574118ce, type: 3}
+  Latency: 0.25
+  MaxClientTickRate: 120

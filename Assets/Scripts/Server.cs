@@ -20,6 +20,7 @@ public class Server : MonoBehaviour
     private float _tickAccumulator;
     private int _snapshotAccumulator;
     private Queue<PendingPacket> _pendingPackets;
+    private int _clientTickId;
 
     private void Start()
     {
@@ -42,6 +43,11 @@ public class Server : MonoBehaviour
 
     private void OnGUI()
     {
+        if (GUILayout.Button("Reset Player"))
+        {
+            (_objects[0] as NetPlayer).Pos = new Vector3(0.0f, 1.0f, 0.0f);
+        }
+
         for (int i = 0; i < PrefabTable.Length; ++i)
         {
             if (GUILayout.Button(PrefabTable[i].name))
@@ -77,6 +83,8 @@ public class Server : MonoBehaviour
                 int writePos = 0;
                 float snapshotDeltaTime = tickDeltaTime * SnapshotInterval;
                 BitConverter.GetBytes(snapshotDeltaTime).CopyTo(packet, writePos);
+                writePos += 4;
+                BitConverter.GetBytes(_clientTickId).CopyTo(packet, writePos);
                 writePos += 4;
 
                 BitConverter.GetBytes(_objects.Count).CopyTo(packet, writePos);
@@ -141,7 +149,8 @@ public class Server : MonoBehaviour
     private void ProcessPacket(byte[] packet)
     {
         byte packedInput = packet[0];
-        float dt = BitConverter.ToSingle(packet, 1);
+        float dt = BitConverter.ToSingle(packet, 1); // TODO make sure the dt is as at least as large as minimum enforced by server
+        _clientTickId = BitConverter.ToInt32(packet, 5);
 
         NetPlayer.Input input = new NetPlayer.Input();
         input.forward = (packedInput & 1) != 0;
