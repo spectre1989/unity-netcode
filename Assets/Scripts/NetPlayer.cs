@@ -44,4 +44,14 @@ public class NetPlayer : NetObject
         newPosition.y = 1.0f;
         this.transform.localPosition = newPosition;
     }
+
+    private void Start()
+    {
+        if (IsClient)
+        {
+            Transform camera = GetComponentInParent<Client>().Camera.transform;
+            camera.parent = this.transform;
+            camera.localPosition = new Vector3(0.0f, 1.0f, 0.0f);
+        }
+    }
 }

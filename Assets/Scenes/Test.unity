@@ -769,6 +769,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Server: {fileID: 963680223}
+  Camera: {fileID: 837500268}
   PrefabTable:
   - {fileID: 1361721486038299065, guid: a49c878a24c7c8743b2f677d78aabf3e, type: 3}
   - {fileID: 8993314460688023190, guid: ced77c36540a6dc4bbcb9cc82a756951, type: 3}

@@ -81,14 +81,12 @@ public class Server : MonoBehaviour
                 byte[] packet = new byte[1500]; // TODO how to properly handle MTU
 
                 int writePos = 0;
-                float snapshotDeltaTime = tickDeltaTime * SnapshotInterval;
-                BitConverter.GetBytes(snapshotDeltaTime).CopyTo(packet, writePos);
-                writePos += 4;
-                BitConverter.GetBytes(_clientTickId).CopyTo(packet, writePos);
-                writePos += 4;
 
-                BitConverter.GetBytes(_objects.Count).CopyTo(packet, writePos);
-                writePos += 4;
+                SnapshotHeaderMsg header = new SnapshotHeaderMsg();
+                header.snapshotDeltaTime = tickDeltaTime * SnapshotInterval;
+                header.clientTickId = _clientTickId;
+                header.objectCount = _objects.Count;
+                writePos += NetSerialisationUtils.WriteStruct(packet, header, writePos);
 
                 for (int i = 0; i < _objects.Count; ++i)
                 {
@@ -148,18 +146,12 @@ public class Server : MonoBehaviour
 
     private void ProcessPacket(byte[] packet)
     {
-        byte packedInput = packet[0];
-        float dt = BitConverter.ToSingle(packet, 1); // TODO make sure the dt is as at least as large as minimum enforced by server
-        _clientTickId = BitConverter.ToInt32(packet, 5);
-
-        NetPlayer.Input input = new NetPlayer.Input();
-        input.forward = (packedInput & 1) != 0;
-        input.back = (packedInput & 2) != 0;
-        input.left = (packedInput & 4) != 0;
-        input.right = (packedInput & 8) != 0;
+        ClientInputMsg msg = NetSerialisationUtils.ReadStruct<ClientInputMsg>(packet);
+        
+        _clientTickId = msg.tickId;
 
         // TODO do something about speed hacks
         NetPlayer player = _objects[0] as NetPlayer;
-        player.Move(input, dt);
+        player.Move(msg.input, msg.dt);
     }
 }

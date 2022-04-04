@@ -6,6 +6,7 @@ using System.Reflection;
 public class Client : MonoBehaviour
 {
     public Server Server;
+    public Camera Camera;
     public GameObject[] PrefabTable;
     public float Latency;
     public float MaxClientTickRate; // TODO this should be tweakable in server settings, and enforced by the server
@@ -50,9 +51,9 @@ public class Client : MonoBehaviour
 
         if (_snapshots.Count > 1)
         {
-            float snapshotDeltaTime = BitConverter.ToSingle(_snapshots[0], 0);
-
-            _snapshotLerpT += (Time.deltaTime / snapshotDeltaTime);
+            SnapshotHeaderMsg header = NetSerialisationUtils.ReadStruct<SnapshotHeaderMsg>(_snapshots[0]);
+            
+            _snapshotLerpT += (Time.deltaTime / header.snapshotDeltaTime);
             while (_snapshotLerpT >= 1.0f && _snapshots.Count > 1)
             {
                 _snapshotLerpT -= 1.0f;
@@ -68,6 +69,11 @@ public class Client : MonoBehaviour
                 Interpolate(_snapshots[0], _snapshots[0], 0.0f);
                 _snapshotLerpT = 0.0f;
             }
+
+            if (_tickId > 0)
+            {
+                (_objects[0] as NetPlayer).Pos = _predictionBuffer[(_tickId - 1) & PREDICTION_BUFFER_MASK].pos;
+            }
         }
 
         float minTickDuration = 1.0f / MaxClientTickRate;
@@ -77,29 +83,23 @@ public class Client : MonoBehaviour
             _tickAccumulator += Time.deltaTime;
             if (_tickAccumulator >= minTickDuration)
             {
-                NetPlayer.Input input = new NetPlayer.Input();
-                input.forward = Input.GetKey(KeyCode.W);
-                input.back = Input.GetKey(KeyCode.S);
-                input.left = Input.GetKey(KeyCode.A);
-                input.right = Input.GetKey(KeyCode.D);
+                ClientInputMsg msg = new ClientInputMsg();
+                msg.tickId = _tickId;
+                msg.dt = _tickAccumulator;
+                msg.input.forward = Input.GetKey(KeyCode.W);
+                msg.input.back = Input.GetKey(KeyCode.S);
+                msg.input.left = Input.GetKey(KeyCode.A);
+                msg.input.right = Input.GetKey(KeyCode.D);
 
-                byte packedInput = (byte)(
-                    (input.forward ? 1 : 0) |
-                    (input.back ? 2 : 0) |
-                    (input.left ? 4 : 0) |
-                    (input.right ? 8 : 0));
                 byte[] packet = new byte[1500];
-                packet[0] = packedInput;
-                BitConverter.GetBytes(_tickAccumulator).CopyTo(packet, 1);
-                BitConverter.GetBytes(_tickId).CopyTo(packet, 5);
-
+                NetSerialisationUtils.WriteStruct(packet, msg);
                 Server.ReceivePacket(packet, Latency);
 
                 NetPlayer netPlayer = _objects[0] as NetPlayer;
-                netPlayer.Move(input, _tickAccumulator);
+                netPlayer.Move(msg.input, _tickAccumulator);
 
                 PredictedMove predictedMove = new PredictedMove();
-                predictedMove.input = input;
+                predictedMove.input = msg.input;
                 predictedMove.dt = _tickAccumulator;
                 predictedMove.pos = netPlayer.Pos;
 
@@ -125,10 +125,11 @@ public class Client : MonoBehaviour
                 byte[] snapshot = _snapshots[_snapshots.Count - 1];
                 NetPlayer player = _objects[0] as NetPlayer;
 
-                int readPos = 4; // skip snapshot delta
-                int tickId = BitConverter.ToInt32(snapshot, readPos);
-                readPos += 4;
-                readPos += 4; // skip objects.count
+                int readPos = 0;
+                
+                SnapshotHeaderMsg header;
+                readPos += NetSerialisationUtils.ReadStruct(out header, snapshot, readPos);
+                
                 readPos += 4; // skip object[0].prefabId
 
                 PropertyInfo[] properties = player.GetType().GetProperties(
@@ -158,13 +159,13 @@ public class Client : MonoBehaviour
                                     BitConverter.ToSingle(snapshot, readPos + 4),
                                     BitConverter.ToSingle(snapshot, readPos + 8));
 
-                                if (Vector3.Distance(_predictionBuffer[tickId & PREDICTION_BUFFER_MASK].pos, pos) > 0.0001f)
+                                if (Vector3.Distance(_predictionBuffer[header.clientTickId & PREDICTION_BUFFER_MASK].pos, pos) > 0.0001f)
                                 {
                                     Debug.Log("CORRECTION");
 
-                                    _predictionBuffer[tickId & PREDICTION_BUFFER_MASK].pos = pos;
+                                    _predictionBuffer[header.clientTickId & PREDICTION_BUFFER_MASK].pos = pos;
                                     player.Pos = pos;
-                                    for (int i = tickId + 1; i < _tickId; ++i)
+                                    for (int i = header.clientTickId + 1; i < _tickId; ++i)
                                     {
                                         player.Move(
                                             _predictionBuffer[i & PREDICTION_BUFFER_MASK].input,
@@ -192,15 +193,14 @@ public class Client : MonoBehaviour
         }
     }
 
-    private bool _hasInterpolatedPlayerOnce; // TODO this is just awful
     private void Interpolate(byte[] a, byte[] b, float t)
     {
-        // TODO really badly need some kind of code gen or something for serialising packets
-        int readPos = 8; // skip snapshot delta, and client tick id
-        int objectCount = BitConverter.ToInt32(a, readPos);
-        readPos += 4;
+        int readPos = 0;
 
-        for (int i = 0; i < objectCount; ++i)
+        SnapshotHeaderMsg header;
+        readPos += NetSerialisationUtils.ReadStruct(out header, a, 0);
+
+        for (int i = 0; i < header.objectCount; ++i)
         {
             int prefabId = BitConverter.ToInt32(a, readPos);
             readPos += 4;
@@ -211,13 +211,6 @@ public class Client : MonoBehaviour
                 obj.transform.parent = this.transform;
                 _objects.Add(obj.GetComponent<NetObject>()); // TODO check the NetObject component exists, warn accordingly if not
             }
-
-            // TODO hack to stop client side prediction being overwritten by interpolation
-            if (i == 0 && _hasInterpolatedPlayerOnce)
-            {
-                continue;
-            }
-            _hasInterpolatedPlayerOnce = true;
 
             PropertyInfo[] properties = _objects[i].GetType().GetProperties(
                 BindingFlags.Public |
