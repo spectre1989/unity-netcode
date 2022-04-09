@@ -155,7 +155,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2096009143}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!64 &226308033
 MeshCollider:
@@ -315,90 +315,6 @@ Transform:
   m_Father: {fileID: 963680222}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &837500265
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 837500266}
-  - component: {fileID: 837500268}
-  - component: {fileID: 837500267}
-  m_Layer: 0
-  m_Name: Main Camera
-  m_TagString: MainCamera
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &837500266
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 837500265}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.69, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2096009143}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!81 &837500267
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 837500265}
-  m_Enabled: 1
---- !u!20 &837500268
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 837500265}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_FocalLength: 50
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0.5
-    y: 0
-    width: 0.5
-    height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
-  orthographic: 0
-  orthographic size: 5
-  m_Depth: -1
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -525,7 +441,7 @@ MonoBehaviour:
   SnapshotInterval: 3
   Client: {fileID: 2096009144}
   PrefabTable:
-  - {fileID: 1361721486038299065, guid: 8dcc1a63b03b0304fa7f977f363fe649, type: 3}
+  - {fileID: 3187918141800639590, guid: c46c804a3abce8a4db76fe19b6f5345a, type: 3}
   - {fileID: 8993314460688023190, guid: f5d0c8fea75f7164cbd681bb1e5f66f1, type: 3}
   - {fileID: 171141080672638969, guid: 4a73793cdbae15847a6f937b40f34e0e, type: 3}
   - {fileID: 5568943864007543346, guid: 7d164c339a4659343ae14b4408a6ed83, type: 3}
@@ -559,7 +475,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2096009143}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!108 &1208225171
 Light:
@@ -750,7 +666,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 837500266}
   - {fileID: 1208225170}
   - {fileID: 226308032}
   m_Father: {fileID: 0}
@@ -769,9 +684,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Server: {fileID: 963680223}
-  Camera: {fileID: 837500268}
   PrefabTable:
-  - {fileID: 1361721486038299065, guid: a49c878a24c7c8743b2f677d78aabf3e, type: 3}
+  - {fileID: 3187918141800639590, guid: 0cc844d2242906b46837af548418078b, type: 3}
   - {fileID: 8993314460688023190, guid: ced77c36540a6dc4bbcb9cc82a756951, type: 3}
   - {fileID: 171141080672638969, guid: 8b77138096aff024da6924131b9e341a, type: 3}
   - {fileID: 5568943864007543346, guid: 127091ed1cf4c8543940de67574118ce, type: 3}

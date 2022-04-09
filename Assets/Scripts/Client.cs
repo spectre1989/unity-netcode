@@ -6,7 +6,6 @@ using System.Reflection;
 public class Client : MonoBehaviour
 {
     public Server Server;
-    public Camera Camera;
     public GameObject[] PrefabTable;
     public float Latency;
     public float MaxClientTickRate; // TODO this should be tweakable in server settings, and enforced by the server
@@ -83,6 +82,21 @@ public class Client : MonoBehaviour
             _tickAccumulator += Time.deltaTime;
             if (_tickAccumulator >= minTickDuration)
             {
+                NetPlayer netPlayer = _objects[0] as NetPlayer;
+
+                float yaw = netPlayer.transform.localEulerAngles.y + (Input.GetAxis("Mouse X") * netPlayer.MouseSensitivity);
+                float pitch = netPlayer.Head.localEulerAngles.x + (-Input.GetAxis("Mouse Y") * netPlayer.MouseSensitivity);
+
+                // normalise within range -180 < pitch <= +180 so we can clamp
+                while (pitch > 180.0f) 
+                {
+                    pitch -= 360.0f;
+                }
+                while (pitch <= -180.0f)
+                {
+                    pitch += 360.0f;
+                }
+
                 ClientInputMsg msg = new ClientInputMsg();
                 msg.tickId = _tickId;
                 msg.dt = _tickAccumulator;
@@ -90,12 +104,13 @@ public class Client : MonoBehaviour
                 msg.input.back = Input.GetKey(KeyCode.S);
                 msg.input.left = Input.GetKey(KeyCode.A);
                 msg.input.right = Input.GetKey(KeyCode.D);
+                msg.input.pitch = pitch;
+                msg.input.yaw = yaw;
 
                 byte[] packet = new byte[1500];
                 NetSerialisationUtils.WriteStruct(packet, msg);
                 Server.ReceivePacket(packet, Latency);
-
-                NetPlayer netPlayer = _objects[0] as NetPlayer;
+                
                 netPlayer.Move(msg.input, _tickAccumulator);
 
                 PredictedMove predictedMove = new PredictedMove();
@@ -109,6 +124,7 @@ public class Client : MonoBehaviour
                 ++_tickId;
             }
 
+            /*
             for (int i = 0; i < PREDICTION_BUFFER_SIZE; ++i)
             {
                 if (_predictionBuffer[i].dt > 0.0f)
@@ -117,6 +133,7 @@ public class Client : MonoBehaviour
                     Debug.DrawLine(globalPos - Vector3.up, globalPos + Vector3.up);
                 }
             }
+            */
 
             if (hasNewSnapshots)
             {
